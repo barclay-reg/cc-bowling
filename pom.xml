@@ -32,6 +32,20 @@
       <artifactId>htmx-spring-boot</artifactId>
       <version>5.1.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>2.3.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openapitools</groupId>
+      <artifactId>jackson-databind-nullable</artifactId>
+      <version>0.2.6</version>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -98,6 +112,41 @@
                   <artifactId>lombok</artifactId>
                 </path>
               </annotationProcessorPaths>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.openapitools</groupId>
+        <artifactId>openapi-generator-maven-plugin</artifactId>
+        <version>7.22.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/api-spec/openapi.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <apiPackage>net.kleinschmager.bowling.api</apiPackage>
+              <modelPackage>net.kleinschmager.bowling.api.model</modelPackage>
+              <configOptions>
+                <useSpringBootStarterParent>true</useSpringBootStarterParent>
+                <useSpringBoot4>true</useSpringBoot4>
+                <useSpringBoot3>false</useSpringBoot3>
+                <useSpringController>true</useSpringController>
+                <useJackson3>true</useJackson3>
+                <useJspecify>false</useJspecify>
+                <delegatePattern>true</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <skipDefaultInterface>false</skipDefaultInterface>
+                <useJakartaEe>true</useJakartaEe>
+                <useBeanValidation>true</useBeanValidation>
+                <performBeanValidation>true</performBeanValidation>
+                <serializationLibrary>jackson</serializationLibrary>
+                <generateBuilders>true</generateBuilders>
+                <generateConstructorWithAllArgs>true</generateConstructorWithAllArgs>
+              </configOptions>
             </configuration>
           </execution>
         </executions>
