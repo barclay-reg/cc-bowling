@@ -23,3 +23,16 @@ number of pins knocked down on the next two rolls.
 
 In the tenth frame, a player who achieves a spare or a strike may take an additional roll
 to finish the frame. However, no more than 3 rolls may be taken in the last frame.
+
+## Implementation Steps
+
+1. Derive User stories
+2. Design the rest-api (API first)
+3. Implement the rest-api
+4. Implement the business logic
+5. Implement the HTMLX frontend
+
+## Possible Improvements
+
+1. use mapstruct to map between the rest-api and the business logic
+2. use a database to store the game state

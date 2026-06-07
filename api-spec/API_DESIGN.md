@@ -78,9 +78,10 @@ Represents a single delivery (throw) in a frame.
 - **Response:** Game with status IN_PROGRESS
 - **Status Code:** 201 Created
 
-#### POST /games/current/reset
+#### POST /games/{gameId}/reset
 **Story:** Story 11 - Reset Game
 - **Description:** Clear all game data and reinitialize
+- **Path Params:** gameId
 - **Request:** ResetGameRequest with confirmation flag
 - **Response:** Game with new game state
 - **Status Code:** 200 OK
@@ -88,10 +89,10 @@ Represents a single delivery (throw) in a frame.
 
 ### Roll Management
 
-#### POST /games/current/frames/{frameNumber}/rolls
+#### POST /games/{gameId}/frames/{frameNumber}/rolls
 **Stories:** Story 2 - Enter Roll Results
 - **Description:** Record pins knocked down for current roll
-- **Path Params:** frameNumber (1-10)
+- **Path Params:** gameId, frameNumber (1-10)
 - **Request:** RecordRollRequest with pinsKnockedDown
 - **Response:** Game with updated game state
 - **Status Code:** 200 OK
@@ -104,9 +105,10 @@ Represents a single delivery (throw) in a frame.
 
 ### Game State Queries
 
-#### GET /games/current
+#### GET /games/{gameId}
 **Stories:** Story 3 - View Current Frame Information, Story 4 - View Knocked Pins, Story 8 - View Overall Score, Story 9 - Game Statistics Overview
 - **Description:** Get complete current game state with all frames and scores
+- **Path Params:** gameId
 - **Response:** Game with all frame and roll data
 - **Status Code:** 200 OK
 - **Includes:**
@@ -117,11 +119,11 @@ Represents a single delivery (throw) in a frame.
   - Cumulative scores
   - Current game position and completion status
 
-#### GET /games/current/frames/{frameNumber}
+#### GET /games/{gameId}/frames/{frameNumber}
 **Stories:** Story 3 - View Current Frame, Story 4 - View Knocked Pins, Story 5 - View Bonuses, Story 6 - Strike Indication, Story 7 - Spare Indication
 - **Description:** Get detailed information for specific frame (returns complete Game)
-- **Path Params:** frameNumber (1-10)
-- **Response:** Game (same structure as /games/current)
+- **Path Params:** gameId, frameNumber (1-10)
+- **Response:** Game (same structure as /games/{gameId})
 - **Status Code:** 200 OK
 - **Includes:**
   - All 10 frames with complete data
@@ -202,20 +204,20 @@ All errors return appropriate HTTP status codes with consistent JSON structure:
 
 ## Story Coverage
 
-| Story | Endpoints | Methods |
-|-------|-----------|---------|
-| S1: Start New Game | POST /games | POST |
-| S2: Enter Roll Results | POST /games/current/frames/{frameNumber}/rolls | POST |
-| S3: View Current Frame | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
-| S4: View Knocked Pins | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
-| S5: View Bonus Points | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
-| S6: Strike Indication | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
-| S7: Spare Indication | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
-| S8: View Overall Score | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
-| S9: Game Statistics Overview | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
-| S10: Error Handling | All endpoints | All methods |
-| S11: Reset Game | POST /games/current/reset | POST |
-| S12: Game Completion | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
+| Story                        | Endpoints                                                   | Methods     |
+|------------------------------|-------------------------------------------------------------|-------------|
+| S1: Start New Game           | POST /games                                                 | POST        |
+| S2: Enter Roll Results       | POST /games/{gameId}/frames/{frameNumber}/rolls             | POST        |
+| S3: View Current Frame       | GET /games/{gameId}, GET /games/{gameId}/frames/{frameNumber} | GET         |
+| S4: View Knocked Pins        | GET /games/{gameId}, GET /games/{gameId}/frames/{frameNumber} | GET         |
+| S5: View Bonus Points        | GET /games/{gameId}, GET /games/{gameId}/frames/{frameNumber} | GET         |
+| S6: Strike Indication        | GET /games/{gameId}, GET /games/{gameId}/frames/{frameNumber} | GET         |
+| S7: Spare Indication         | GET /games/{gameId}, GET /games/{gameId}/frames/{frameNumber} | GET         |
+| S8: View Overall Score       | GET /games/{gameId}, GET /games/{gameId}/frames/{frameNumber} | GET         |
+| S9: Game Statistics Overview | GET /games/{gameId}, GET /games/{gameId}/frames/{frameNumber} | GET         |
+| S10: Error Handling          | All endpoints                                               | All methods |
+| S11: Reset Game              | POST /games/{gameId}/reset                                   | POST        |
+| S12: Game Completion         | GET /games/{gameId}, GET /games/{gameId}/frames/{frameNumber} | GET         |
 
 ## Security Considerations
 
@@ -299,18 +301,18 @@ All endpoints return the same consistent **Game** structure, providing complete 
 curl -X POST http://localhost:8080/games
 
 # Record a roll (5 pins knocked in frame 1)
-curl -X POST http://localhost:8080/games/current/frames/1/rolls \
+curl -X POST http://localhost:8080/games/game-123/frames/1/rolls \
   -H "Content-Type: application/json" \
   -d '{"pinsKnockedDown": 5}'
 
 # Get current game state
-curl -X GET http://localhost:8080/games/current
+curl -X GET http://localhost:8080/games/game-123
 
 # Get frame 5 details (return frame 5 focused)
-curl -X GET http://localhost:8080/games/current/frames/5
+curl -X GET http://localhost:8080/games/game-123/frames/5
 
 # Reset game (with confirmation)
-curl -X POST http://localhost:8080/games/current/reset \
+curl -X POST http://localhost:8080/games/game-123/reset \
   -H "Content-Type: application/json" \
   -d '{"confirmed": true}'
 ```

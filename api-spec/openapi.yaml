@@ -62,38 +62,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /games/current:
+  /games/{gameId}:
     get:
-      summary: Get current game state
+      summary: Get game state by id
       description: |
-        Retrieves the complete state of the current game,
+        Retrieves the complete state of the specified game,
         including all frames, rolls, and calculated scores.
-      operationId: getCurrentGame
+      operationId: getGameById
       tags:
         - Game State
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          description: Unique game identifier
+          schema:
+            type: string
       responses:
         '200':
-          description: Current game state
+          description: Game state
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Game'
         '404':
-          description: No active game session found
+          description: Game not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /games/current/reset:
+  /games/{gameId}/reset:
     post:
-      summary: Reset the current game
+      summary: Reset the specified game
       description: |
         Clears all game data and reinitializes the game to Frame 1, Roll 1.
         Requires confirmation to prevent accidental data loss.
       operationId: resetGame
       tags:
         - Game Management
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          description: Unique game identifier
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -114,13 +128,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: No active game session found
+          description: Game not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /games/current/frames/{frameNumber}/rolls:
+  /games/{gameId}/frames/{frameNumber}/rolls:
     post:
       summary: Record a roll
       description: |
@@ -137,6 +151,12 @@ paths:
       tags:
         - Rolls
       parameters:
+        - name: gameId
+          in: path
+          required: true
+          description: Unique game identifier
+          schema:
+            type: string
         - name: frameNumber
           in: path
           required: true
@@ -177,7 +197,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /games/current/frames/{frameNumber}:
+  /games/{gameId}/frames/{frameNumber}:
     get:
       summary: Get specific frame details
       description: |
@@ -187,6 +207,12 @@ paths:
       tags:
         - Game State
       parameters:
+        - name: gameId
+          in: path
+          required: true
+          description: Unique game identifier
+          schema:
+            type: string
         - name: frameNumber
           in: path
           required: true
