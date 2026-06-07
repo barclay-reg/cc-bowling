@@ -26,13 +26,14 @@ to finish the frame. However, no more than 3 rolls may be taken in the last fram
 
 ## Implementation Steps
 
-1. Derive User stories
-2. Design the rest-api (API first)
-3. Implement the rest-api
-4. Implement the business logic
+1. Derive User stories (/)
+2. Design the rest-api (API first)  (/)
+3. Implement the rest-api (/)
+4. Implement the business logic (/)
 5. Implement the HTMLX frontend
 
-## Possible Improvements
+## Next Steps
 
-1. use mapstruct to map between the rest-api and the business logic
-2. use a database to store the game state
+1. rework rest-api to better deal with jackson3 nullable support
+2. use mapstruct to map between the rest-api and the business logic
+3. use a database to store the game state
