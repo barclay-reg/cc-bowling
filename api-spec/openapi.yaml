@@ -5,7 +5,9 @@ info:
     REST API for a bowling game scoring application.
 
     This API provides endpoints for managing a single-player bowling game session,
-    including starting new games, recording roll results, and retrieving game statistics.
+    including starting new games, recording roll results, and retrieving comprehensive
+    game statistics. All endpoints return a unified Game structure containing
+    the complete game state.
 
     ## Scoring Rules
     - **Frames**: A game consists of 10 frames
@@ -14,9 +16,10 @@ info:
     - **Spare**: All 10 pins using 2 rolls; bonus = next 1 roll
     - **Perfect Game**: 300 points (all strikes)
 
-    ## Game State
-    The API maintains a single in-memory game session. Endpoints allow creating new games,
-    recording rolls, and querying the current game state.
+    ## Response Design
+    This API uses a unified response model where all endpoints return the complete Game
+    structure. This simplifies the contract and ensures clients always have full game state
+    information regardless of which endpoint is called.
   version: 1.0.0
   contact:
     name: Bowling Game Support
@@ -33,7 +36,7 @@ tags:
   - name: Rolls
     description: Record and retrieve roll information
   - name: Game State
-    description: Query game statistics and scoreboard
+    description: Query game statistics and complete game state
 
 paths:
   /games:
@@ -51,13 +54,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameResponse'
+                $ref: '#/components/schemas/Game'
         '500':
           description: Server error while creating game
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
 
   /games/current:
     get:
@@ -74,13 +77,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameResponse'
+                $ref: '#/components/schemas/Game'
         '404':
           description: No active game session found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
 
   /games/current/reset:
     post:
@@ -103,19 +106,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameResponse'
+                $ref: '#/components/schemas/Game'
         '400':
           description: Invalid reset request (confirmation flag not set)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
         '404':
           description: No active game session found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
 
   /games/current/frames/{frameNumber}/rolls:
     post:
@@ -154,59 +157,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameResponse'
+                $ref: '#/components/schemas/Game'
         '400':
           description: Invalid roll data
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
         '404':
           description: Game or frame not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
         '409':
           description: Roll cannot be recorded in current game state
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /games/current/scoreboard:
-    get:
-      summary: Get complete scoreboard
-      description: |
-        Retrieves a detailed scoreboard showing all frames with:
-        - Individual roll pins
-        - Strike/spare indicators
-        - Applied bonuses
-        - Cumulative scores
-        - Current game total score
-      operationId: getScoreboard
-      tags:
-        - Game State
-      responses:
-        '200':
-          description: Complete scoreboard
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ScoreboardResponse'
-        '404':
-          description: No active game session found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
 
   /games/current/frames/{frameNumber}:
     get:
       summary: Get specific frame details
       description: |
-        Retrieves detailed information about a specific frame,
-        including rolls, bonus status, and score.
+        Retrieves detailed information about a specific frame.
+        Returns the single Frame.
       operationId: getFrameDetails
       tags:
         - Game State
@@ -221,40 +197,43 @@ paths:
             maximum: 10
       responses:
         '200':
-          description: Frame details
+          description: Frame details and complete game state
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FrameResponse'
+                $ref: '#/components/schemas/Frame'
         '400':
           description: Invalid frame number
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
         '404':
           description: Game or frame not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
 
 components:
   schemas:
-    GameResponse:
+    Game:
       type: object
-      description: Complete game state
+      description: |
+        Complete game state returned by all endpoints.
+        This unified response provides full context of the current game session,
+        including all 10 frames with their complete state information.
       properties:
         gameId:
           type: string
           description: Unique identifier for the game session
           example: "game-2024-001"
-        currentFrame:
+        currentFrameNumber:
           type: integer
           minimum: 1
           maximum: 10
           description: Current frame number
-        currentRoll:
+        currentRollNumber:
           type: integer
           minimum: 1
           maximum: 3
@@ -263,13 +242,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Frame'
-          description: Array of all 10 frames
+          description: Array of all 10 frames with complete state
         totalScore:
           type: integer
           minimum: 0
           maximum: 300
           description: Total cumulative score for completed frames
-        isComplete:
+        gameComplete:
           type: boolean
           description: Whether all 10 frames have been completed
         createdAt:
@@ -286,13 +265,15 @@ components:
         - currentRoll
         - frames
         - totalScore
-        - isComplete
+        - gameComplete
         - createdAt
         - updatedAt
 
     Frame:
       type: object
-      description: A single frame within a game
+      description: |
+        A single frame within a game with complete state information.
+        Includes strike/spare indicators, bonus calculations, and completion status.
       properties:
         frameNumber:
           type: integer
@@ -304,17 +285,17 @@ components:
           items:
             $ref: '#/components/schemas/Roll'
           description: Rolls recorded in this frame
-        isStrike:
+        strike:
           type: boolean
           description: Whether a strike was scored in this frame
-        isSpare:
+        spare:
           type: boolean
           description: Whether a spare was scored in this frame
         baseScore:
           type: integer
           minimum: 0
           maximum: 10
-          description: Base score (pins knocked down in frame)
+          description: Base score (pins knocked down in frame, excluding bonus)
         bonus:
           type: integer
           minimum: 0
@@ -325,7 +306,7 @@ components:
           type: integer
           minimum: 0
           maximum: 30
-          description: Total score for this frame (base + bonus)
+          description: Total score for this frame (base + bonus, null if pending)
           nullable: true
         cumulativeScore:
           type: integer
@@ -333,17 +314,32 @@ components:
           maximum: 300
           description: Cumulative score up to and including this frame (null if incomplete)
           nullable: true
-        isCompleted:
+        rollsComplete:
           type: boolean
           description: Whether all rolls for this frame have been recorded
+        scorePending:
+          type: boolean
+          description: Whether frame has pending bonus calculation (awaiting future rolls)
+        allowedRolls:
+          type: integer
+          minimum: 1
+          maximum: 3
+          description: Maximum rolls allowed in this frame (2 for frames 1-9, 3 for frame 10)
+        nextExpectedRoll:
+          type: integer
+          minimum: 1
+          maximum: 3
+          description: Expected next roll number (null if frame complete or pending)
+          nullable: true
       required:
         - frameNumber
         - rolls
-        - isStrike
-        - isSpare
+        - strike
+        - spare
         - baseScore
-        - frameScore
-        - isCompleted
+        - rollsComplete
+        - scorePending
+        - allowedRolls
 
     Roll:
       type: object
@@ -362,122 +358,6 @@ components:
       required:
         - rollNumber
         - pinsKnockedDown
-
-    ScoreboardResponse:
-      type: object
-      description: Complete scoreboard with all frame information
-      properties:
-        gameId:
-          type: string
-          description: Game identifier
-        totalScore:
-          type: integer
-          description: Final or current total score
-        frames:
-          type: array
-          items:
-            $ref: '#/components/schemas/ScoreboardFrame'
-          description: Array of frames with scoreboard information
-      required:
-        - gameId
-        - totalScore
-        - frames
-
-    ScoreboardFrame:
-      type: object
-      description: Frame information for scoreboard display
-      properties:
-        frameNumber:
-          type: integer
-          description: Frame number
-        roll1:
-          type: integer
-          nullable: true
-          description: Pins knocked in first roll
-        roll2:
-          type: integer
-          nullable: true
-          description: Pins knocked in second roll (null for strikes in frames 1-9)
-        roll3:
-          type: integer
-          nullable: true
-          description: Bonus roll in 10th frame (null for non-qualifying frames)
-        strikes:
-          type: string
-          description: Strike indicator (e.g., "X" or empty)
-          example: "X"
-        spare:
-          type: string
-          description: Spare indicator (e.g., "/" or empty)
-          example: "/"
-        bonus:
-          type: integer
-          nullable: true
-          description: Bonus points applied
-        frameScore:
-          type: integer
-          nullable: true
-          description: Total points for frame
-        cumulativeScore:
-          type: integer
-          nullable: true
-          description: Running total score
-      required:
-        - frameNumber
-
-    FrameResponse:
-      type: object
-      description: Detailed information about a single frame
-      properties:
-        frameNumber:
-          type: integer
-          description: Frame number
-        rolls:
-          type: array
-          items:
-            $ref: '#/components/schemas/Roll'
-          description: All rolls in this frame
-        isStrike:
-          type: boolean
-          description: Strike status
-        isSpare:
-          type: boolean
-          description: Spare status
-        baseScore:
-          type: integer
-          description: Base score
-        bonus:
-          type: integer
-          nullable: true
-          description: Applied bonus (null if pending)
-        frameScore:
-          type: integer
-          nullable: true
-          description: Frame total score
-        cumulativeScore:
-          type: integer
-          nullable: true
-          description: Cumulative score through this frame
-        isCompleted:
-          type: boolean
-          description: Whether frame is complete
-        isPending:
-          type: boolean
-          description: Whether frame has pending bonus calculation
-        allowedRolls:
-          type: integer
-          description: Maximum rolls allowed in this frame
-        nextExpectedRoll:
-          type: integer
-          nullable: true
-          description: Expected next roll number (null if frame complete)
-      required:
-        - frameNumber
-        - rolls
-        - isStrike
-        - isSpare
-        - baseScore
-        - isCompleted
 
     RecordRollRequest:
       type: object
@@ -501,7 +381,7 @@ components:
       required:
         - confirmed
 
-    ErrorResponse:
+    Error:
       type: object
       description: Error response from API
       properties:

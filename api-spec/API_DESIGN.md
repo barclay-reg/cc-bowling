@@ -32,31 +32,34 @@ The main resource representing a complete bowling game session.
 
 **Key Properties:**
 - `gameId`: Unique identifier for the session
-- `currentFrame`: Current frame number (1-10)
-- `currentRoll`: Current roll number within frame (1-3)
+- `currentFrameNumber`: Current frame number (1-10)
+- `currentRollNumber`: Current roll number within frame (1-3)
 - `frames`: Array of all 10 frames
 - `totalScore`: Cumulative score for completed frames
-- `isComplete`: Whether all 10 frames have been completed
+- `gameComplete`: Whether all 10 frames have been completed
 - `createdAt`: When the game was created
 - `updatedAt`: When the game was last updated
 
 **Game Completion:**
-- `isComplete` is `true` when all 10 frames are completed with all required rolls recorded
-- `isComplete` is `false` while game is still in progress
+- `gameComplete` is `true` when all 10 frames are completed with all required rolls recorded
+- `gameComplete` is `false` while game is still in progress
 
 ### Frame
-Represents a single frame (turn) in the game.
+Represents a single frame (turn) in the game with complete state and context information.
 
 **Key Properties:**
 - `frameNumber`: Position in game (1-10)
 - `rolls`: Array of rolls in this frame
-- `isStrike`: Whether all 10 pins knocked on first roll
-- `isSpare`: Whether all 10 pins knocked using both rolls
+- `strike`: Whether all 10 pins knocked on first roll
+- `spare`: Whether all 10 pins knocked using both rolls
 - `baseScore`: Total pins knocked in frame
 - `bonus`: Additional points from strike/spare (null if pending)
-- `frameScore`: Total score for frame (base + bonus)
-- `cumulativeScore`: Running total through this frame
-- `isCompleted`: Whether frame is finished
+- `frameScore`: Total score for frame (base + bonus), null if pending
+- `cumulativeScore`: Running total through this frame, null if pending
+- `rollsComplete`: Whether frame is finished
+- `scorePending`: Whether frame has pending bonus calculation (awaiting future rolls)
+- `allowedRolls`: Maximum rolls allowed in this frame (2 for frames 1-9, 3 for frame 10)
+- `nextExpectedRoll`: Expected next roll number (null if frame complete or pending)
 
 ### Roll
 Represents a single delivery (throw) in a frame.
@@ -72,14 +75,14 @@ Represents a single delivery (throw) in a frame.
 #### POST /games
 **Story:** Story 1 - Start a New Game
 - **Description:** Initialize new game with 10 frames
-- **Response:** GameResponse with status IN_PROGRESS
+- **Response:** Game with status IN_PROGRESS
 - **Status Code:** 201 Created
 
 #### POST /games/current/reset
 **Story:** Story 11 - Reset Game
 - **Description:** Clear all game data and reinitialize
 - **Request:** ResetGameRequest with confirmation flag
-- **Response:** GameResponse with new game state
+- **Response:** Game with new game state
 - **Status Code:** 200 OK
 - **Validation:** Requires confirmed=true to prevent accidents
 
@@ -90,9 +93,9 @@ Represents a single delivery (throw) in a frame.
 - **Description:** Record pins knocked down for current roll
 - **Path Params:** frameNumber (1-10)
 - **Request:** RecordRollRequest with pinsKnockedDown
-- **Response:** GameResponse with updated game state
+- **Response:** Game with updated game state
 - **Status Code:** 200 OK
-- **Validation:** 
+- **Validation:**
   - Pin count must match frame context
   - Frames 1-9: Roll 1 (0-10), Roll 2 (0 to remaining)
   - Frame 10: Special rules for strike/spare
@@ -102,35 +105,31 @@ Represents a single delivery (throw) in a frame.
 ### Game State Queries
 
 #### GET /games/current
-**Stories:** Story 3 - View Current Frame Information, Story 4 - View Knocked Pins
-- **Description:** Get complete current game state
-- **Response:** GameResponse with all frame and roll data
-- **Status Code:** 200 OK
-
-#### GET /games/current/frames/{frameNumber}
-**Stories:** Story 3, Story 4, Story 5, Story 6, Story 7
-- **Description:** Get detailed information for specific frame
-- **Path Params:** frameNumber (1-10)
-- **Response:** FrameResponse with rolls, bonuses, indicators
+**Stories:** Story 3 - View Current Frame Information, Story 4 - View Knocked Pins, Story 8 - View Overall Score, Story 9 - Game Statistics Overview
+- **Description:** Get complete current game state with all frames and scores
+- **Response:** Game with all frame and roll data
 - **Status Code:** 200 OK
 - **Includes:**
+  - All 10 frames with complete frame data
   - Individual rolls with pin counts
   - Strike/spare indicators
-  - Base score and bonus points
-  - Cumulative score
-  - Pending bonus status
+  - Base scores and bonus points
+  - Cumulative scores
+  - Current game position and completion status
 
-#### GET /games/current/scoreboard
-**Stories:** Story 4 - View Knocked Pins, Story 5 - View Bonuses, Story 8 - View Overall Score, Story 9 - Game Statistics Overview
-- **Description:** Get complete scoreboard with all frames
-- **Response:** ScoreboardResponse formatted for display
+#### GET /games/current/frames/{frameNumber}
+**Stories:** Story 3 - View Current Frame, Story 4 - View Knocked Pins, Story 5 - View Bonuses, Story 6 - Strike Indication, Story 7 - Spare Indication
+- **Description:** Get detailed information for specific frame (returns complete Game)
+- **Path Params:** frameNumber (1-10)
+- **Response:** Game (same structure as /games/current)
 - **Status Code:** 200 OK
 - **Includes:**
-  - All 10 frames with rolls
-  - Visual indicators (strikes/spares)
-  - Applied bonuses
-  - Frame scores and cumulative totals
-  - Game status and final score
+  - All 10 frames with complete data
+  - Highlighted/focused frame with additional context
+  - Individual rolls with pin counts
+  - Strike/spare indicators
+  - Base scores and bonus points
+  - Cumulative scores and frame completion status
 
 ## Scoring Validation
 
@@ -203,32 +202,20 @@ All errors return appropriate HTTP status codes with consistent JSON structure:
 
 ## Story Coverage
 
-| Story | Endpoint | Method | Path |
-|-------|----------|--------|------|
-| S1: Start New Game | POST /games | POST | /games |
-| S2: Enter Roll Results | recordRoll | POST | /games/current/frames/{frameNumber}/rolls |
-| S3: View Current Frame | getCurrentGame, getFrameDetails | GET | /games/current, /games/current/frames/{frameNumber} |
-| S4: View Knocked Pins | getScoreboard | GET | /games/current/scoreboard |
-| S5: View Bonus Points | getFrameDetails, getScoreboard | GET | /games/current/frames/{frameNumber}, /games/current/scoreboard |
-| S6: Strike Indication | getFrameDetails, getScoreboard | GET | /games/current/frames/{frameNumber}, /games/current/scoreboard |
-| S7: Spare Indication | getFrameDetails, getScoreboard | GET | /games/current/frames/{frameNumber}, /games/current/scoreboard |
-| S8: View Overall Score | getScoreboard | GET | /games/current/scoreboard |
-| S9: Game Statistics Overview | getScoreboard | GET | /games/current/scoreboard |
-| S10: Error Handling | All endpoints | - | All endpoints |
-| S11: Reset Game | resetGame | POST | /games/current/reset |
-| S12: Game Completion | getCurrentGame, getScoreboard | GET | /games/current, /games/current/scoreboard |
-
-## Data Persistence
-
-**Current Design:** In-memory session state
-- Single active game session at a time
-- Game state lost on server restart
-- Suitable for single-player, single-session gameplay
-
-**Future Enhancement:** Could add database persistence
-- Store game history
-- Support multiple concurrent sessions
-- Implement game resumption
+| Story | Endpoints | Methods |
+|-------|-----------|---------|
+| S1: Start New Game | POST /games | POST |
+| S2: Enter Roll Results | POST /games/current/frames/{frameNumber}/rolls | POST |
+| S3: View Current Frame | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
+| S4: View Knocked Pins | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
+| S5: View Bonus Points | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
+| S6: Strike Indication | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
+| S7: Spare Indication | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
+| S8: View Overall Score | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
+| S9: Game Statistics Overview | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
+| S10: Error Handling | All endpoints | All methods |
+| S11: Reset Game | POST /games/current/reset | POST |
+| S12: Game Completion | GET /games/current, GET /games/current/frames/{frameNumber} | GET |
 
 ## Security Considerations
 
@@ -237,19 +224,69 @@ All errors return appropriate HTTP status codes with consistent JSON structure:
 3. **Frame Access:** Players cannot modify past frames or skip ahead
 4. **No Authentication:** Single-player local game (no auth required)
 
-## Response Format
+## Unified Response Format
 
-All successful responses follow consistent JSON structure:
+All endpoints return the same consistent **Game** structure, providing complete game state. This unified approach eliminates response duplication and provides clients with all necessary information regardless of which endpoint is called.
 
 **Game Response Example:**
 ```json
 {
   "gameId": "game-2024-001",
-  "currentFrame": 3,
-  "currentRoll": 1,
-  "frames": [ /* frame array */ ],
-  "totalScore": 35,
-  "isComplete": false,
+  "currentFrameNumber": 3,
+  "currentRollNumber": 1,
+  "frames": [
+    {
+      "frameNumber": 1,
+      "rolls": [
+        { "rollNumber": 1, "pinsKnockedDown": 5 },
+        { "rollNumber": 2, "pinsKnockedDown": 3 }
+      ],
+      "strike": false,
+      "spare": false,
+      "baseScore": 8,
+      "bonus": null,
+      "frameScore": 8,
+      "cumulativeScore": 8,
+      "rollsComplete": true,
+      "scorePending": false,
+      "allowedRolls": 2,
+      "nextExpectedRoll": null
+    },
+    {
+      "frameNumber": 2,
+      "rolls": [
+        { "rollNumber": 1, "pinsKnockedDown": 10 }
+      ],
+      "strike": true,
+      "spare": false,
+      "baseScore": 10,
+      "bonus": null,
+      "frameScore": null,
+      "cumulativeScore": null,
+      "rollsComplete": false,
+      "scorePending": true,
+      "allowedRolls": 1,
+      "nextExpectedRoll": null
+    },
+    {
+      "frameNumber": 3,
+      "rolls": [
+        { "rollNumber": 1, "pinsKnockedDown": 5 }
+      ],
+      "strike": false,
+      "spare": false,
+      "baseScore": 5,
+      "bonus": 10,
+      "frameScore": 15,
+      "cumulativeScore": 33,
+      "rollsComplete": false,
+      "scorePending": false,
+      "allowedRolls": 2,
+      "nextExpectedRoll": 2
+    }
+  ],
+  "totalScore": 33,
+  "gameComplete": false,
   "createdAt": "2024-06-07T12:00:00Z",
   "updatedAt": "2024-06-07T12:05:00Z"
 }
@@ -269,10 +306,7 @@ curl -X POST http://localhost:8080/games/current/frames/1/rolls \
 # Get current game state
 curl -X GET http://localhost:8080/games/current
 
-# Get scoreboard
-curl -X GET http://localhost:8080/games/current/scoreboard
-
-# Get frame 5 details
+# Get frame 5 details (return frame 5 focused)
 curl -X GET http://localhost:8080/games/current/frames/5
 
 # Reset game (with confirmation)
@@ -280,11 +314,3 @@ curl -X POST http://localhost:8080/games/current/reset \
   -H "Content-Type: application/json" \
   -d '{"confirmed": true}'
 ```
-
-## Implementation Roadmap
-
-1. **Phase 1:** Core scoring engine (frames, rolls, strikes, spares)
-2. **Phase 2:** API endpoints with validation
-3. **Phase 3:** Error handling and edge cases
-4. **Phase 4:** UI integration with HTMX
-5. **Phase 5:** Enhanced features (persistence, statistics)
