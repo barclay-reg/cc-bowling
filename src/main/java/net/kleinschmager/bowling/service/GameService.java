@@ -80,7 +80,7 @@ public class GameService {
     }
 
     currentGame.setUpdatedAt(OffsetDateTime.now());
-    scoreService.computeScores(currentGame);
+    scoreService.computeScoresAndGameStatistics(currentGame);
     return currentGame;
   }
 
@@ -201,6 +201,6 @@ public class GameService {
     currentGame.setFrames(frames);
     currentGame.setCurrentFrameNumber(FIRST_FRAME);
     currentGame.setCurrentRollNumber(FIRST_ROLL);
-    scoreService.computeScores(currentGame);
+    scoreService.computeScoresAndGameStatistics(currentGame);
   }
 }

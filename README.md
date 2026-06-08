@@ -46,6 +46,13 @@ to finish the frame. However, no more than 3 rolls may be taken in the last fram
 
 ### Next Steps
 
-1. rework rest-api to better deal with jackson3 nullable support
-2. use mapstruct to map between the rest-api and the business logic
-3. use a database to store the game state
+1. Fix 10th frame logic - each roll can be a strike, not only the full frame - refactoring of data-model needed
+2. fix failing tests
+3. refactor ScoreService - split responsibility of method
+4. rework rest-api to better deal with jackson3 nullable support
+5. use mapstruct to map between the rest-api and the business logic
+6. use a database to store the game state
+
+### Tags
+
+- state of code after 4 hours: https://github.com/barclay-reg/cc-bowling/releases/tag/after-4-hours

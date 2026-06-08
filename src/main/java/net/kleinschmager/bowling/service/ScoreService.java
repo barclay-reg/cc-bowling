@@ -13,7 +13,7 @@ import java.util.List;
 @Service
 public class ScoreService {
 
-    public void computeScores(Game currentGame) {
+    public void computeScoresAndGameStatistics(Game currentGame) {
         if (currentGame == null) return;
         List<Frame> frames = currentGame.getFrames();
         for (Frame f : frames) {
